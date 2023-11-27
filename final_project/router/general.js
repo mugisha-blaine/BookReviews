@@ -3,7 +3,7 @@ let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
-
+const axios = require('axios');
 
 public_users.post("/register", (req,res) => {
   //Write your code here
@@ -29,9 +29,14 @@ public_users.post("/register", (req,res) => {
 // Get the book list available in the shop
 public_users.get('/',function (req, res) {
   //Write your code here
-  const booksString = JSON.stringify(books, null, 2); // Convert books array/object to a nicely formatted string
-  return res.status(200).send(`${booksString}`); // Send the format
-  
+  try {
+    // Simulating fetching the list of books (from a local array in this case)
+    const booksString = JSON.stringify(books, null, 2); // Convert books array/object to a nicely formatted string
+    return res.status(200).send(`${booksString}`); // Send the formatted list of books
+  } catch (error) {
+    console.error('Error fetching books:', error);
+    return res.status(500).send('Error fetching books'); // Sending an error response if fetching fails
+  }
 });
 
 // Get book details based on ISBN
@@ -52,46 +57,55 @@ public_users.get('/isbn/:isbn',function (req, res) {
 
   
 // Get book details based on author
-public_users.get('/author/:author',function (req, res) {
+public_users.get('/author/:author', async function (req, res) {
   //Write your code here
   const requestedAuthor = req.params.author; // Retrieve the author from request parameters
-  const booksArray = Object.values(books); // Convert books object to an array of book objects
-  const booksByAuthor = [];
 
-  // Iterate through the books array to find books by the provided author
-  booksArray.forEach(book => {
-    if (book.author === requestedAuthor) {
-      booksByAuthor.push(book);
+  // Create a Promise to filter books by author
+  const findBooksByAuthor = new Promise((resolve, reject) => {
+    const booksByAuthor = books.filter(book => book.author === requestedAuthor);
+    if (booksByAuthor.length === 0) {
+      reject("Books by this author not found");
+    } else {
+      resolve(booksByAuthor);
     }
   });
 
-  if (booksByAuthor.length === 0) {
-    return res.status(404).json({ message: "Books by this author not found" });
-  }
-
-  return res.status(200).json({ books: booksByAuthor });
+  // Using Promise callbacks with Axios
+  findBooksByAuthor
+    .then(booksByAuthor => {
+      return res.status(200).json({ books: booksByAuthor });
+    })
+    .catch(error => {
+      return res.status(404).json({ message: error });
+    });
 });
+
   
 
 // Get all books based on title
-public_users.get('/title/:title',function (req, res) {
+public_users.get('/title/:title', async function (req, res) {
   //Write your code here
-  const requestedTitle = req.params.title; // Retrieve the title from request parameters
-  const booksArray = Object.values(books); // Convert books object to an array of book objects
-  const booksByTitle = [];
+  const requestedTitle = req.params.title.toLowerCase(); // Retrieve the title from request parameters
 
-  // Iterate through the books array to find books with the provided title
-  booksArray.forEach(book => {
-    if (book.title.toLowerCase().includes(requestedTitle.toLowerCase())) {
-      booksByTitle.push(book);
+  // Create a Promise to filter books by title
+  const findBooksByTitle = new Promise((resolve, reject) => {
+    const booksByTitle = books.filter(book => book.title.toLowerCase().includes(requestedTitle));
+    if (booksByTitle.length === 0) {
+      reject("Books with this title not found");
+    } else {
+      resolve(booksByTitle);
     }
   });
 
-  if (booksByTitle.length === 0) {
-    return res.status(404).json({ message: "Books with this title not found" });
-  }
-
-  return res.status(200).json({ books: booksByTitle });
+  // Using Promise callbacks with Axios
+  findBooksByTitle
+    .then(booksByTitle => {
+      return res.status(200).json({ books: booksByTitle });
+    })
+    .catch(error => {
+      return res.status(404).json({ message1: error });
+    });
 });
 
 //  Get book review
@@ -109,3 +123,4 @@ public_users.get('/review/:isbn',function (req, res) {
 });
 
 module.exports.general = public_users;
+

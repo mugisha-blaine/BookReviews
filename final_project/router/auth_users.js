@@ -38,7 +38,7 @@ regd_users.post("/login", (req, res) => {
   req.user = { username, token };
 
   // Return the token in the response
-  return res.status(200).json({ message: "Login successful", token });
+  return res.status(200).json({ message: "Login successful"});
 });
 
 // Add a book review
@@ -72,7 +72,6 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
 });
  
  
-
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
 module.exports.users = users;
